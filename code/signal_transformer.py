@@ -1,5 +1,3 @@
-#signal_transformer.py
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -18,6 +16,9 @@ def plot_frequency_domain(signal, sampling_rate, signal_name):
         signal (np.ndarray): The time-domain signal to be transformed.
         sampling_rate (int): The sampling rate of the signal in Hz.
         signal_name (str): The name of the signal for labeling and saving.
+    
+    Returns:
+        tuple: Frequencies and amplitudes for saving to CSV.
     """
     N = len(signal)  # Number of samples
     T = 1 / sampling_rate  # Sampling interval
@@ -35,15 +36,34 @@ def plot_frequency_domain(signal, sampling_rate, signal_name):
     plt.grid()
     plt.show()
 
-    # Save the frequency domain data to CSV
-    frequency_data = {
-        "Frequency (Hz)": xf,
-        "Amplitude": 2.0 / N * np.abs(yf[0:N // 2])
+    return xf, 2.0 / N * np.abs(yf[0:N // 2])  # Return frequencies and amplitudes
+
+def save_combined_frequency_data(clean_signal, eog_noise, emg_noise, sampling_rate):
+    """
+    Saves the frequency domain data of clean EEG, EOG noise, and EMG noise into a single CSV file.
+    
+    Args:
+        clean_signal (np.ndarray): Clean EEG signal.
+        eog_noise (np.ndarray): EOG noise signal.
+        emg_noise (np.ndarray): EMG noise signal.
+        sampling_rate (int): The sampling rate of the signals in Hz.
+    """
+    # Get frequency and amplitude for each signal
+    xf_clean, amp_clean = plot_frequency_domain(clean_signal, sampling_rate, "Clean_EEG_Signal")
+    xf_eog, amp_eog = plot_frequency_domain(eog_noise, sampling_rate, "EOG_Noise")
+    xf_emg, amp_emg = plot_frequency_domain(emg_noise, sampling_rate, "EMG_Noise")
+
+    # Create a combined DataFrame
+    combined_data = {
+        "Frequency (Hz)": xf_clean,  # Assuming all signals have the same frequency bins
+        "Clean EEG Amplitude": amp_clean,
+        "EOG Amplitude": np.interp(xf_clean, xf_eog, amp_eog, left=0, right=0),  # Interpolating EOG onto clean frequencies
+        "EMG Amplitude": np.interp(xf_clean, xf_emg, amp_emg, left=0, right=0)   # Interpolating EMG onto clean frequencies
     }
-    df = pd.DataFrame(frequency_data)
-    csv_path = os.path.join("../data", f"{signal_name}_frequency_domain.csv")
-    df.to_csv(csv_path, index=False)
-    print(f"Frequency domain data saved to {csv_path}")
+    df_combined = pd.DataFrame(combined_data)
+    csv_path = os.path.join("../data", "combined_frequency_domain_data.csv")
+    df_combined.to_csv(csv_path, index=False)
+    print(f"Combined frequency domain data saved to {csv_path}")
 
 if __name__ == "__main__":
     # Example usage
@@ -54,7 +74,5 @@ if __name__ == "__main__":
     eog_noise = generate_eog_noise(-3)  # Example SNR for EOG noise
     emg_noise = generate_emg_noise(-5)  # Example SNR for EMG noise
 
-    # Plot frequency domain representation and save data for each signal
-    plot_frequency_domain(clean_signal, 1000, "Clean_EEG_Signal")  # Sampling rate is 1000 Hz
-    plot_frequency_domain(eog_noise, 1000, "EOG_Noise")
-    plot_frequency_domain(emg_noise, 1000, "EMG_Noise")
+    # Save combined frequency domain data
+    save_combined_frequency_data(clean_signal, eog_noise, emg_noise, 1000)  # Sampling rate is 1000 Hz
