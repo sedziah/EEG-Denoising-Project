@@ -25,6 +25,6 @@ plot_and_save_signals(clean_signal, eog_noise, emg_noise)
 
 # Plot frequency domain representations
 print("Transforming signals to frequency domain...")
-plot_frequency_domain(clean_signal, 1000)  # Sampling rate is 1000 Hz
-plot_frequency_domain(eog_noise, 1000)     # EOG noise frequency analysis
-plot_frequency_domain(emg_noise, 1000)     # EMG noise frequency analysis
+plot_frequency_domain(clean_signal, 1000, "Clean_EEG_Signal")  # Sampling rate is 1000 Hz
+plot_frequency_domain(eog_noise, 1000, "EOG_Noise")
+plot_frequency_domain(emg_noise, 1000, "EMG_Noise")

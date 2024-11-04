@@ -62,7 +62,7 @@ def save_signals_to_csv(clean_signal, eog_noise, emg_noise):
         "Composite Signal (µV)": composite_signal * 1e6
     }
     df = pd.DataFrame(data)
-    csv_path = os.path.join("../data", "simulated_eeg_data.csv")  # Save in ../data
+    csv_path = os.path.join("../data", "mean_clean_eeg_and_noise_time_domain.csv")  # Updated file name
     df.to_csv(csv_path, index=False)
     print(f"Signals saved to {csv_path}")
 
