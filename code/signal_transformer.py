@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.fft import fft, fftfreq
 import os
@@ -7,16 +6,14 @@ import os
 # Ensure the data folder exists one level up
 os.makedirs("../data", exist_ok=True)
 
-def plot_frequency_domain(signal, sampling_rate, signal_name):
+def compute_frequency_domain(signal, sampling_rate):
     """
-    Computes the FFT of a signal, plots the frequency spectrum,
-    and saves the frequency data to a CSV file.
-    
+    Computes the FFT of a signal and returns the frequency bins and amplitudes.
+
     Args:
         signal (np.ndarray): The time-domain signal to be transformed.
         sampling_rate (int): The sampling rate of the signal in Hz.
-        signal_name (str): The name of the signal for labeling and saving.
-    
+
     Returns:
         tuple: Frequencies and amplitudes for saving to CSV.
     """
@@ -24,24 +21,14 @@ def plot_frequency_domain(signal, sampling_rate, signal_name):
     T = 1 / sampling_rate  # Sampling interval
     yf = fft(signal)  # Compute the FFT
     xf = fftfreq(N, T)[:N // 2]  # Frequency bins
+    amplitude = 2.0 / N * np.abs(yf[0:N // 2])  # Amplitude
 
-    # Plotting the frequency spectrum
-    plt.figure(figsize=(10, 5))
-    plt.plot(xf, 2.0 / N * np.abs(yf[0:N // 2]), label='Frequency Spectrum')
-    plt.title(f'Frequency Domain Representation of {signal_name}')
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Amplitude')
-    plt.xlim(0, 50)  # Limit x-axis for better visibility
-    plt.legend()
-    plt.grid()
-    plt.show()
-
-    return xf, 2.0 / N * np.abs(yf[0:N // 2])  # Return frequencies and amplitudes
+    return xf, amplitude
 
 def save_combined_frequency_data(clean_signal, eog_noise, emg_noise, sampling_rate):
     """
     Saves the frequency domain data of clean EEG, EOG noise, and EMG noise into a single CSV file.
-    
+
     Args:
         clean_signal (np.ndarray): Clean EEG signal.
         eog_noise (np.ndarray): EOG noise signal.
@@ -49,9 +36,9 @@ def save_combined_frequency_data(clean_signal, eog_noise, emg_noise, sampling_ra
         sampling_rate (int): The sampling rate of the signals in Hz.
     """
     # Get frequency and amplitude for each signal
-    xf_clean, amp_clean = plot_frequency_domain(clean_signal, sampling_rate, "Clean_EEG_Signal")
-    xf_eog, amp_eog = plot_frequency_domain(eog_noise, sampling_rate, "EOG_Noise")
-    xf_emg, amp_emg = plot_frequency_domain(emg_noise, sampling_rate, "EMG_Noise")
+    xf_clean, amp_clean = compute_frequency_domain(clean_signal, sampling_rate)
+    xf_eog, amp_eog = compute_frequency_domain(eog_noise, sampling_rate)
+    xf_emg, amp_emg = compute_frequency_domain(emg_noise, sampling_rate)
 
     # Create a combined DataFrame
     combined_data = {
