@@ -7,7 +7,7 @@ from signal_simulator import (
     save_signals_to_csv,
     plot_and_save_signals,
 )
-from signal_transformer import plot_frequency_domain  # Importing the function for frequency analysis
+from signal_transformer import save_combined_frequency_data  # Import the correct function
 
 # Generate signals
 clean_signal = generate_clean_eeg_signal()
@@ -23,8 +23,6 @@ except Exception as e:
 # Plot and save signals as images
 plot_and_save_signals(clean_signal, eog_noise, emg_noise)
 
-# Plot frequency domain representations
-print("Transforming signals to frequency domain...")
-plot_frequency_domain(clean_signal, 1000, "Clean_EEG_Signal")  # Sampling rate is 1000 Hz
-plot_frequency_domain(eog_noise, 1000, "EOG_Noise")
-plot_frequency_domain(emg_noise, 1000, "EMG_Noise")
+# Save combined frequency domain data
+print("Transforming signals to frequency domain and saving...")
+save_combined_frequency_data(clean_signal, eog_noise, emg_noise, 1000)  # Sampling rate is 1000 Hz
