@@ -12,8 +12,8 @@ time_points = np.arange(0, duration, 1 / sampling_rate)
 A_SIGNAL = 5e-6  # Amplitude of the clean EEG signal in volts (5 microvolts)
 F_SIGNAL = 10  # Frequency of the EEG SSVEP signal in Hz (10 Hz)
 
-# Ensure the data folder exists
-os.makedirs("data", exist_ok=True)
+# Ensure the data folder exists one level up
+os.makedirs("../data", exist_ok=True)
 
 def generate_clean_eeg_signal():
     """Generates a clean EEG signal based on SSVEP parameters."""
@@ -62,7 +62,7 @@ def save_signals_to_csv(clean_signal, eog_noise, emg_noise):
         "Composite Signal (µV)": composite_signal * 1e6
     }
     df = pd.DataFrame(data)
-    csv_path = os.path.join("data", "simulated_eeg_data.csv")
+    csv_path = os.path.join("../data", "simulated_eeg_data.csv")  # Save in ../data
     df.to_csv(csv_path, index=False)
     print(f"Signals saved to {csv_path}")
 
@@ -76,30 +76,30 @@ def plot_and_save_signals(clean_signal, eog_noise, emg_noise):
     plt.plot(time_points, clean_signal * 1e6, label="Clean EEG Signal (10 Hz)")
     plt.ylabel("Amplitude (µV)")
     plt.legend()
-    plt.savefig("data/clean_eeg_signal.png")
+    plt.savefig("../data/clean_eeg_signal.png")  # Save in ../data
 
     plt.subplot(4, 1, 2)
     plt.plot(time_points, eog_noise * 1e6, label="EOG Noise (1 Hz)")
     plt.ylabel("Amplitude (µV)")
     plt.legend()
-    plt.savefig("data/eog_noise.png")
+    plt.savefig("../data/eog_noise.png")  # Save in ../data
 
     plt.subplot(4, 1, 3)
     plt.plot(time_points, emg_noise * 1e6, label="EMG Noise (20 Hz)")
     plt.ylabel("Amplitude (µV)")
     plt.legend()
-    plt.savefig("data/emg_noise.png")
+    plt.savefig("../data/emg_noise.png")  # Save in ../data
 
     plt.subplot(4, 1, 4)
     plt.plot(time_points, composite_signal * 1e6, label="Composite Signal (EEG + EOG + EMG)")
     plt.xlabel("Time (s)")
     plt.ylabel("Amplitude (µV)")
     plt.legend()
-    plt.savefig("data/composite_signal.png")
+    plt.savefig("../data/composite_signal.png")  # Save in ../data
 
     plt.tight_layout()
     plt.show()
-    print("Plots saved as images in the 'data' folder.")
+    print("Plots saved as images in the '../data' folder.")
 
 # Example usage
 if __name__ == "__main__":
