@@ -1,28 +1,53 @@
 # main.py
 
-from signal_simulator import (
-    generate_clean_eeg_signal,
-    generate_eog_noise,
-    generate_emg_noise,
-    save_signals_to_csv,
-    plot_and_save_signals,
-)
-from signal_transformer import save_combined_frequency_data  # Import the correct function
+from train_model import ensure_data_exists, load_signals, normalize_signals, split_data, save_split_data, load_preprocessed_data, prepare_data, RNN_lstm
+import tensorflow as tf
+import os
 
-# Generate signals
-clean_signal = generate_clean_eeg_signal()
-eog_noise = generate_eog_noise(-3)  # Adjust SNR as needed
-emg_noise = generate_emg_noise(-5)  # Adjust SNR as needed
+# Paths to training, validation, and test data
+train_path = "../data/split_data/train_data.csv"
+val_path = "../data/split_data/val_data.csv"
+std_dev_path = "../data/split_data/std_composite.txt"
 
-# Save signals to CSV
-try:
-    save_signals_to_csv(clean_signal, eog_noise, emg_noise)
-except Exception as e:
-    print(f"Error saving CSV: {e}")
+# Ensure data exists and is preprocessed
+ensure_data_exists()  # This will generate raw data if it doesn’t already exist
 
-# Plot and save signals as images
-plot_and_save_signals(clean_signal, eog_noise, emg_noise)
+# Load and preprocess data
+signals = load_signals()
+normalized_data = normalize_signals(signals)
+data_splits = split_data(normalized_data)
+save_split_data(data_splits)
 
-# Save combined frequency domain data
-print("Transforming signals to frequency domain and saving...")
-save_combined_frequency_data(clean_signal, eog_noise, emg_noise, 1000)  # Sampling rate is 1000 Hz
+# Load preprocessed data
+X_train, y_train = load_preprocessed_data(train_path)
+X_val, y_val = load_preprocessed_data(val_path)
+
+# Check if data loaded correctly
+if X_train is not None and X_val is not None:
+    timesteps = 10  # Number of timesteps for LSTM input
+
+    # Prepare data for LSTM
+    X_train, y_train = prepare_data(X_train, y_train, timesteps)
+    X_val, y_val = prepare_data(X_val, y_val, timesteps)
+
+    # Create the model
+    model = RNN_lstm(timesteps)
+    model.summary()  # Print model summary
+
+    # Compile the model with custom optimizer
+    optimizer = tf.keras.optimizers.Adam(learning_rate=5e-5, beta_1=0.5, beta_2=0.9)
+    model.compile(optimizer=optimizer, loss='mse')
+
+    # Define model checkpoint callback
+    checkpoint_path = "../data/best_lstm_model.keras"
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, save_best_only=True, monitor='val_loss')
+
+    # Train the model with validation data
+    model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val), callbacks=[checkpoint])
+
+    # Save the final trained model
+    final_model_path = "../data/final_trained_lstm_model.keras"
+    model.save(final_model_path)
+    print(f"Model trained and saved as {final_model_path}")
+else:
+    print("Training aborted due to data loading failure.")

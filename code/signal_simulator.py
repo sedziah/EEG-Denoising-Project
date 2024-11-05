@@ -1,3 +1,4 @@
+# signal_simulator.py
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -62,7 +63,7 @@ def save_signals_to_csv(clean_signal, eog_noise, emg_noise):
         "Composite Signal (µV)": composite_signal * 1e6
     }
     df = pd.DataFrame(data)
-    csv_path = os.path.join("../data", "mean_clean_eeg_and_noise_time_domain.csv")  # Updated file name
+    csv_path = os.path.join("../data", "mean_clean_eeg_and_noise_time_domain.csv")
     df.to_csv(csv_path, index=False)
     print(f"Signals saved to {csv_path}")
 
@@ -97,18 +98,5 @@ def plot_and_save_signals(clean_signal, eog_noise, emg_noise):
     plt.legend()
     plt.savefig("../data/composite_signal.png")  # Save in ../data
 
-    plt.tight_layout()
-    plt.show()
+    plt.close()  # Close plot to avoid display
     print("Plots saved as images in the '../data' folder.")
-
-# Example usage
-if __name__ == "__main__":
-    clean_signal = generate_clean_eeg_signal()
-    eog_noise = generate_eog_noise(-3)  # Example SNR for EOG noise
-    emg_noise = generate_emg_noise(-5)  # Example SNR for EMG noise
-
-    # Save signals to CSV
-    save_signals_to_csv(clean_signal, eog_noise, emg_noise)
-
-    # Plot and save signals as images
-    plot_and_save_signals(clean_signal, eog_noise, emg_noise)
