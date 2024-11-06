@@ -38,11 +38,15 @@ X_test_seq, y_test_seq = [], []
 # Create sequences for testing
 for i in range(len(X_test_composite) - timesteps):
     # Stack all three features into the input sequence
-    composite_seq = X_test_composite[i:i + timesteps]
-    eog_seq = X_test_eog[i:i + timesteps]
-    emg_seq = X_test_emg[i:i + timesteps]
-    X_test_seq.append(np.stack([composite_seq, eog_seq, emg_seq], axis=-1))  # Shape (timesteps, 3)
-    y_test_seq.append(y_test[i + timesteps - 1])  # Target is the last value of each sequence
+    composite_seq = X_test_composite[i : i + timesteps]
+    eog_seq = X_test_eog[i : i + timesteps]
+    emg_seq = X_test_emg[i : i + timesteps]
+    X_test_seq.append(
+        np.stack([composite_seq, eog_seq, emg_seq], axis=-1)
+    )  # Shape (timesteps, 3)
+    y_test_seq.append(
+        y_test[i + timesteps - 1]
+    )  # Target is the last value of each sequence
 
 X_test_seq = np.array(X_test_seq)  # Shape: (num_samples, timesteps, 3)
 y_test_seq = np.array(y_test_seq)  # Shape: (num_samples,)
@@ -59,17 +63,27 @@ if std_dev:
 mse = mean_squared_error(y_test_seq, y_pred_seq)
 print(f"Mean Squared Error: {mse}")
 
-# Plotting the expected vs. predicted results
+# Plotting the expected vs. predicted results and saving to file
 plt.figure(figsize=(12, 6))
-plt.plot(y_test_seq[:100], label="Expected (True Values)", color="blue")  # Plot first 100 samples for clarity
+plt.plot(
+    y_test_seq[:100], label="Expected (True Values)", color="blue"
+)  # Plot first 100 samples for clarity
 plt.plot(y_pred_seq[:100], label="Predicted Values", color="red", linestyle="dashed")
 plt.title("Predicted vs. Expected Results (First 100 Samples)")
 plt.xlabel("Sample Index")
 plt.ylabel("Amplitude (µV)")
 plt.legend()
-plt.show()
 
-# Optional: Save results to a CSV file for further analysis
-results_df = pd.DataFrame({"Expected": y_test_seq.flatten(), "Predicted": y_pred_seq.flatten()})
+# Save the plot without showing it
+plot_path = "../data/predicted_vs_expected_plot.png"
+plt.savefig(plot_path)
+print(f"Plot saved to {plot_path}")
+plt.close()  # Close the plot to free up memory
+
+# Optional: Save results to a CSV file with accuracy calculation
+results_df = pd.DataFrame(
+    {"Expected": y_test_seq.flatten(), "Predicted": y_pred_seq.flatten()}
+)
+
 results_df.to_csv("../data/predicted_vs_expected.csv", index=False)
 print("Predicted vs. expected results saved to ../data/predicted_vs_expected.csv")
