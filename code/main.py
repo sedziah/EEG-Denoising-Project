@@ -11,6 +11,7 @@ from train_model import (
 )
 import os
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from network_structure import RNN_lstm
 
 # Define paths for the data files
@@ -26,7 +27,7 @@ if __name__ == "__main__":
 
     # Load and normalize signals
     signals = load_signals()
-    normalized_data, std_composite = normalize_signals(signals)  # Unpack tuple
+    normalized_data, std_composite = normalize_signals(signals)
 
     # Save standard deviation for later use
     with open(std_dev_path, "w") as f:
@@ -35,7 +36,7 @@ if __name__ == "__main__":
 
     # Split and save data if not already done
     data_splits = split_data(normalized_data)
-    save_split_data(data_splits, save_dir)  # Provide save_dir here
+    save_split_data(data_splits, save_dir)
 
     # Load preprocessed training and validation data
     X_train, y_train = load_preprocessed_data(train_path)
@@ -51,14 +52,14 @@ if __name__ == "__main__":
             normalized_data["eog_noise"],
             normalized_data["emg_noise"],
             y_train,
-            timesteps
+            timesteps,
         )
         X_val, y_val = prepare_data(
             normalized_data["composite_signal"],
             normalized_data["eog_noise"],
             normalized_data["emg_noise"],
             y_val,
-            timesteps
+            timesteps,
         )
 
         # Define feature count for the LSTM input (3: composite signal, EOG, and EMG noise)
@@ -67,18 +68,44 @@ if __name__ == "__main__":
 
         # Compile model with specified optimizer
         optimizer = tf.keras.optimizers.Adam(learning_rate=5e-5, beta_1=0.5, beta_2=0.9)
-        model.compile(optimizer=optimizer, loss='mse')
+        model.compile(optimizer=optimizer, loss="mse")
 
         # Define model checkpoint to save best weights
         checkpoint_path = "../data/best_lstm_model.keras"
-        checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, save_best_only=True, monitor='val_loss')
+        checkpoint = tf.keras.callbacks.ModelCheckpoint(
+            checkpoint_path, save_best_only=True, monitor="val_loss"
+        )
 
-        # Train the model
-        model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val), callbacks=[checkpoint])
+        # Train the model and capture the history
+        history = model.fit(
+            X_train,
+            y_train,
+            epochs=50,
+            batch_size=32,
+            validation_data=(X_val, y_val),
+            callbacks=[checkpoint],
+        )
 
         # Save the final trained model
         final_model_path = "../data/final_trained_lstm_model.keras"
         model.save(final_model_path)
         print(f"Model trained and saved as {final_model_path}")
+
+        # Plot training and validation losses
+        plt.figure(figsize=(10, 6))
+        plt.plot(history.history["loss"], label="Training Loss")
+        plt.plot(history.history["val_loss"], label="Validation Loss")
+        plt.title("Training and Validation Loss Over Epochs")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss (MSE)")
+        plt.legend()
+
+        # Save the plot
+        loss_plot_path = "../data/loss_plot.png"
+        plt.savefig(loss_plot_path)
+        print(f"Loss plot saved to {loss_plot_path}")
+
+        plt.show()
+
     else:
         print("Training aborted due to data loading failure.")
