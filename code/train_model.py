@@ -46,19 +46,21 @@ def load_signals():
     return signals
 
 def normalize_signals(signals):
-    """Normalizes the composite signal and clean EEG signal based on composite signal's standard deviation."""
+    """Normalizes signals based on composite signal's standard deviation."""
     composite_signal = signals["composite_signal"]
     clean_eeg = signals["clean_eeg"]
+    eog_noise = signals["eog_noise"]
+    emg_noise = signals["emg_noise"]
 
     std_composite = np.std(composite_signal)
-    normalized_composite = composite_signal / std_composite
-    normalized_clean = clean_eeg / std_composite
-
-    return {
-        "normalized_composite": normalized_composite,
-        "normalized_clean": normalized_clean,
+    normalized_signals = {
+        "normalized_composite": composite_signal / std_composite,
+        "normalized_clean": clean_eeg / std_composite,
+        "normalized_eog": eog_noise / std_composite,
+        "normalized_emg": emg_noise / std_composite,
         "std_composite": std_composite
     }
+    return normalized_signals
 
 def split_data(normalized_data, train_ratio=0.7, val_ratio=0.15):
     """Splits normalized data into training, validation, and test sets."""
@@ -97,24 +99,27 @@ def load_preprocessed_data(file_path):
         print(f"File not found: {file_path}")
         return None, None
 
-def prepare_data(X, y, timesteps):
+def prepare_data(X_composite, X_eog, X_emg, y, timesteps):
     """
-    Prepares the data for training by creating input sequences.
+    Prepares the data for training by creating input sequences with multiple features.
     
     Args:
-        X (np.ndarray): The normalized composite signal (input).
-        y (np.ndarray): The normalized clean signal (target).
-        timesteps (int): The number of timesteps for LSTM input.
+        X_composite (np.ndarray): Normalized composite signal.
+        X_eog (np.ndarray): Normalized EOG noise.
+        X_emg (np.ndarray): Normalized EMG noise.
+        y (np.ndarray): Normalized clean signal (target).
+        timesteps (int): Number of timesteps for LSTM input.
         
     Returns:
         tuple: (X, y) where X is the input data reshaped for LSTM, and y is the target reshaped for sequence output.
     """
     X_seq, y_seq = [], []
-    for i in range(len(X) - timesteps):
-        X_seq.append(X[i:i + timesteps])
-        y_seq.append(y[i:i + timesteps])  # Adjusted to match sequence length
-    X_seq = np.array(X_seq).reshape((len(X_seq), timesteps, 1))
-    y_seq = np.array(y_seq).reshape((len(y_seq), timesteps))
+    for i in range(len(X_composite) - timesteps):
+        # Stack all three features into the input sequence
+        X_seq.append(np.stack([X_composite[i:i + timesteps], X_eog[i:i + timesteps], X_emg[i:i + timesteps]], axis=-1))
+        y_seq.append(y[i:i + timesteps])  # Target is still the clean EEG signal
+    X_seq = np.array(X_seq)
+    y_seq = np.array(y_seq)
     return X_seq, y_seq
 
 if __name__ == "__main__":
@@ -142,18 +147,25 @@ if __name__ == "__main__":
     if X_train is not None and X_val is not None:
         timesteps = 10  # Number of timesteps for LSTM input
 
-        # Prepare data for LSTM
-        X_train, y_train = prepare_data(X_train, y_train, timesteps)
-        X_val, y_val = prepare_data(X_val, y_val, timesteps)
+        # Prepare data for LSTM using all features
+        X_train, y_train = prepare_data(normalized_data["normalized_composite"], 
+                                        normalized_data["normalized_eog"], 
+                                        normalized_data["normalized_emg"], 
+                                        y_train, timesteps)
+        
+        X_val, y_val = prepare_data(normalized_data["normalized_composite"], 
+                                    normalized_data["normalized_eog"], 
+                                    normalized_data["normalized_emg"], 
+                                    y_val, timesteps)
 
-        # Create the model
-        model = RNN_lstm(timesteps)
-        model.summary()  # Print model summary
-
-        # Compile the model with custom optimizer
+        # Create the model with multiple features
+        feature_count = 3  # Composite Signal, EOG Noise, EMG Noise
+        model = RNN_lstm(timesteps, feature_count=feature_count)
+        
+        # Compile the model with a custom optimizer
         optimizer = tf.keras.optimizers.Adam(learning_rate=5e-5, beta_1=0.5, beta_2=0.9)
         model.compile(optimizer=optimizer, loss='mse')
-
+        
         # Define model checkpoint callback
         checkpoint_path = "../data/best_lstm_model.keras"
         checkpoint = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, save_best_only=True, monitor='val_loss')
