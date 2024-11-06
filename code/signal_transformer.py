@@ -1,67 +1,128 @@
-#signal_transformer.py
+# signal_transformer.py
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.fft import fft, fftfreq
 import os
+
+# Set simulation parameters
+sampling_rate = 1000  # Sampling rate in Hz
+duration = 1  # Duration in seconds
+time_points = np.arange(0, duration, 1 / sampling_rate)
+
+# Define parameters for the clean EEG SSVEP signal
+A_SIGNAL = 5e-6  # Amplitude of the clean EEG signal in volts (5 microvolts)
+F_SIGNAL = 10  # Frequency of the EEG SSVEP signal in Hz (10 Hz)
 
 # Ensure the data folder exists one level up
 os.makedirs("../data", exist_ok=True)
 
-def compute_frequency_domain(signal, sampling_rate):
-    """
-    Computes the FFT of a signal and returns the frequency bins and amplitudes.
+def generate_clean_eeg_signal():
+    """Generates a clean EEG signal based on SSVEP parameters."""
+    return A_SIGNAL * np.sin(2 * np.pi * F_SIGNAL * time_points)
 
-    Args:
-        signal (np.ndarray): The time-domain signal to be transformed.
-        sampling_rate (int): The sampling rate of the signal in Hz.
+def calculate_power(signal):
+    """Calculates the power of a given signal using RMS."""
+    return np.mean(signal**2)
 
-    Returns:
-        tuple: Frequencies and amplitudes for saving to CSV.
-    """
-    N = len(signal)  # Number of samples
-    T = 1 / sampling_rate  # Sampling interval
-    yf = fft(signal)  # Compute the FFT
-    xf = fftfreq(N, T)[:N // 2]  # Frequency bins
-    amplitude = 2.0 / N * np.abs(yf[0:N // 2])  # Amplitude
+def calculate_snr_db(signal, noise):
+    """Calculates the SNR in dB between a signal and noise."""
+    power_signal = calculate_power(signal)
+    power_noise = calculate_power(noise)
+    snr_db = 10 * np.log10(power_signal / power_noise)
+    return snr_db
 
-    return xf, amplitude
+def generate_eog_noise(target_snr_db):
+    """Generates EOG noise at a target SNR with respect to the clean EEG signal."""
+    B_EOG = 1  # Initial amplitude for EOG noise before scaling
+    F_EOG = 1  # Frequency of EOG noise in Hz (1 Hz)
 
-def save_combined_frequency_data(clean_signal, eog_noise, emg_noise, sampling_rate):
-    """
-    Saves the frequency domain data of clean EEG, EOG noise, and EMG noise into a single CSV file.
+    # Initial EOG noise signal
+    eog_noise = B_EOG * np.sin(2 * np.pi * F_EOG * time_points)
 
-    Args:
-        clean_signal (np.ndarray): Clean EEG signal.
-        eog_noise (np.ndarray): EOG noise signal.
-        emg_noise (np.ndarray): EMG noise signal.
-        sampling_rate (int): The sampling rate of the signals in Hz.
-    """
-    # Get frequency and amplitude for each signal
-    xf_clean, amp_clean = compute_frequency_domain(clean_signal, sampling_rate)
-    xf_eog, amp_eog = compute_frequency_domain(eog_noise, sampling_rate)
-    xf_emg, amp_emg = compute_frequency_domain(emg_noise, sampling_rate)
+    # Scale to achieve target SNR
+    power_signal = calculate_power(generate_clean_eeg_signal())
+    power_noise_target = power_signal / (10 ** (target_snr_db / 10))
+    scaling_factor = np.sqrt(power_noise_target / calculate_power(eog_noise))
+    return eog_noise * scaling_factor
 
-    # Create a combined DataFrame
-    combined_data = {
-        "Frequency (Hz)": xf_clean,  # Assuming all signals have the same frequency bins
-        "Clean EEG Amplitude": amp_clean,
-        "EOG Amplitude": np.interp(xf_clean, xf_eog, amp_eog, left=0, right=0),  # Interpolating EOG onto clean frequencies
-        "EMG Amplitude": np.interp(xf_clean, xf_emg, amp_emg, left=0, right=0)   # Interpolating EMG onto clean frequencies
+def generate_emg_noise(target_snr_db):
+    """Generates EMG noise at a target SNR with respect to the clean EEG signal."""
+    B_EMG = 1  # Initial amplitude for EMG noise before scaling
+    F_EMG = 20  # Frequency of EMG noise in Hz (20 Hz)
+
+    # Initial EMG noise signal
+    emg_noise = B_EMG * np.sin(2 * np.pi * F_EMG * time_points)
+
+    # Scale to achieve target SNR
+    power_signal = calculate_power(generate_clean_eeg_signal())
+    power_noise_target = power_signal / (10 ** (target_snr_db / 10))
+    scaling_factor = np.sqrt(power_noise_target / calculate_power(emg_noise))
+    return emg_noise * scaling_factor
+
+def save_signals_to_csv(clean_signal, eog_noise, emg_noise):
+    """Saves the clean EEG signal, EOG noise, EMG noise, composite signal, and SNRs to a CSV file."""
+    composite_signal = clean_signal + eog_noise + emg_noise
+
+    # Calculate SNRs for each noise type
+    eog_snr_db = calculate_snr_db(clean_signal, eog_noise)
+    emg_snr_db = calculate_snr_db(clean_signal, emg_noise)
+
+    data = {
+        "Time (s)": time_points,
+        "Clean EEG Signal (µV)": clean_signal * 1e6,  # Convert to microvolts
+        "EOG Noise (µV)": eog_noise * 1e6,
+        "EMG Noise (µV)": emg_noise * 1e6,
+        "Composite Signal (µV)": composite_signal * 1e6,
+        "EOG SNR (dB)": [eog_snr_db] * len(time_points),  # Repeat for each time point
+        "EMG SNR (dB)": [emg_snr_db] * len(time_points)   # Repeat for each time point
     }
-    df_combined = pd.DataFrame(combined_data)
-    csv_path = os.path.join("../data", "combined_frequency_domain_data.csv")
-    df_combined.to_csv(csv_path, index=False)
-    print(f"Combined frequency domain data saved to {csv_path}")
+    df = pd.DataFrame(data)
+    csv_path = os.path.join("../data", "mean_clean_eeg_and_noise_with_snr_time_domain.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"Signals and SNRs saved to {csv_path}")
 
-if __name__ == "__main__":
-    # Example usage
-    from signal_simulator import generate_clean_eeg_signal, generate_eog_noise, generate_emg_noise
+def plot_and_save_signals(clean_signal, eog_noise, emg_noise):
+    """Plots and saves the clean EEG signal, EOG noise, EMG noise, and the composite signal as images."""
+    composite_signal = clean_signal + eog_noise + emg_noise
 
-    # Generate signals
-    clean_signal = generate_clean_eeg_signal()
-    eog_noise = generate_eog_noise(-3)  # Example SNR for EOG noise
-    emg_noise = generate_emg_noise(-5)  # Example SNR for EMG noise
+    plt.figure(figsize=(12, 8))
 
-    # Save combined frequency domain data
-    save_combined_frequency_data(clean_signal, eog_noise, emg_noise, 1000)  # Sampling rate is 1000 Hz
+    plt.subplot(4, 1, 1)
+    plt.plot(time_points, clean_signal * 1e6, label="Clean EEG Signal (10 Hz)")
+    plt.ylabel("Amplitude (µV)")
+    plt.legend()
+    plt.savefig("../data/clean_eeg_signal.png")  # Save in ../data
+
+    plt.subplot(4, 1, 2)
+    plt.plot(time_points, eog_noise * 1e6, label="EOG Noise (1 Hz)")
+    plt.ylabel("Amplitude (µV)")
+    plt.legend()
+    plt.savefig("../data/eog_noise.png")  # Save in ../data
+
+    plt.subplot(4, 1, 3)
+    plt.plot(time_points, emg_noise * 1e6, label="EMG Noise (20 Hz)")
+    plt.ylabel("Amplitude (µV)")
+    plt.legend()
+    plt.savefig("../data/emg_noise.png")  # Save in ../data
+
+    plt.subplot(4, 1, 4)
+    plt.plot(time_points, composite_signal * 1e6, label="Composite Signal (EEG + EOG + EMG)")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Amplitude (µV)")
+    plt.legend()
+    plt.savefig("../data/composite_signal.png")  # Save in ../data
+
+    plt.close()  # Close plot to avoid display
+    print("Plots saved as images in the '../data' folder.")
+
+# Generate signals
+clean_signal = generate_clean_eeg_signal()
+eog_noise = generate_eog_noise(target_snr_db=-7)  # Example SNR for EOG noise
+emg_noise = generate_emg_noise(target_snr_db=2)   # Example SNR for EMG noise
+
+# Save signals and SNRs to CSV
+save_signals_to_csv(clean_signal, eog_noise, emg_noise)
+
+# Plot and save signals as images
+plot_and_save_signals(clean_signal, eog_noise, emg_noise)
