@@ -12,7 +12,7 @@ from train_model import (
 import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from network_structure import RNN_lstm
+from code.network_structure import RNN_lstm
 
 # Define paths for the data files
 train_path = "../data/split_data/train_data.csv"
