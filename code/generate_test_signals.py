@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration, harmonic_factors):
+def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration, harmonic_factors=[0.5, 0.25]):
     """
     Generate a signal with harmonics based on specified parameters and save it as a CSV file.
 
@@ -15,10 +15,10 @@ def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration
     Returns:
     - str: The filename of the generated CSV file.
     """
-    # Generate time vector based on duration and sampling rate
+    # Generate time vector using np.linspace for precise interval spacing
     t = np.linspace(0, duration, int(sampling_rate * duration), endpoint=False)
     
-    # Generate the base signal
+    # Generate the base (clean) signal
     base_signal = amplitude * np.sin(2 * np.pi * frequency * t)
 
     # Generate harmonics based on harmonic_factors
@@ -29,17 +29,17 @@ def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration
         harmonic = (amplitude * factor) * np.sin(2 * np.pi * harmonic_freq * t + phase_shift)
         harmonics.append(harmonic)
 
-    # Combine base signal and harmonics to form the noisy signal
+    # Sum the base signal and harmonics to create the noisy signal
     noisy_signal = base_signal + sum(harmonics)
 
-    # Prepare data dictionary for DataFrame
+    # Prepare data dictionary for DataFrame in the specified order
     data = {
         "Time": t,
-        "Noisy Signal": noisy_signal,
-        "Base Signal": base_signal
+        "Clean Signal": base_signal
     }
     for idx, harmonic in enumerate(harmonics, start=1):
         data[f"Harmonic {idx}"] = harmonic
+    data["Noisy Signal"] = noisy_signal  # Add noisy signal as the last column
 
     # Save data to CSV
     csv_filename = "generated_signal_with_harmonics.csv"
@@ -48,3 +48,12 @@ def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration
 
     print(f"CSV file '{csv_filename}' generated successfully.")
     return csv_filename
+
+# Test the function with sample parameters
+generate_signal_with_harmonics(
+    amplitude=5,          # Amplitude of 5 µV
+    frequency=10,         # Base frequency of 10 Hz
+    sampling_rate=1000,   # Sampling rate of 1000 samples per second
+    duration=2,           # Duration of 2 seconds
+    harmonic_factors=[0.5, 0.25]  # Scaling factors for harmonics
+)
