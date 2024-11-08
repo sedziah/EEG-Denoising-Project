@@ -70,22 +70,24 @@
         <h1>Generate Signal</h1>
         <form action="/generate" method="post">
             <label for="frequency">Signal Frequency (Hz):</label>
-            <input type="number" id="frequency" name="frequency" step="0.1" value="10" required><br>
-
+            <input type="number" id="frequency" name="frequency" step="0.1" required><br>
+    
             <label for="amplitude">Signal Amplitude (µV):</label>
-            <input type="number" id="amplitude" name="amplitude" step="0.1" value="5" required><br>
-
+            <input type="number" id="amplitude" name="amplitude" step="0.1" required><br>
+    
             <label for="sampling_rate">Sampling Frequency (Hz):</label>
-            <input type="number" id="sampling_rate" name="sampling_rate" value="1000" required><br>
-
+            <input type="number" id="sampling_rate" name="sampling_rate" required><br>
+    
             <label for="duration">Duration (s):</label>
-            <input type="number" id="duration" name="duration" step="0.1" value="1" required><br>
-
+            <input type="number" id="duration" name="duration" step="0.1" required><br>
+    
+            <label for="harmonic_option">Harmonic Factors:</label>
+            <select id="harmonic_option" name="harmonic_option" required>
+                <option value="0.5">Single Harmonic (0.5)</option>
+                <option value="0.5,0.25">Two Harmonics (0.5, 0.25)</option>
+            </select><br><br>
+    
             <button type="submit">Generate and Download CSV</button>
-        </form>
-
-        <form action="/" method="get">
-            <button type="submit" class="home-button">Return to Home</button>
         </form>
     </div>
 </body>

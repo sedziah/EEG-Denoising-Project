@@ -49,11 +49,11 @@ def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration
     print(f"CSV file '{csv_filename}' generated successfully.")
     return csv_filename
 
-# Test the function with sample parameters
-generate_signal_with_harmonics(
-    amplitude=5,          # Amplitude of 5 µV
-    frequency=10,         # Base frequency of 10 Hz
-    sampling_rate=1000,   # Sampling rate of 1000 samples per second
-    duration=2,           # Duration of 2 seconds
-    harmonic_factors=[0.5, 0.25]  # Scaling factors for harmonics
-)
+# # Test the function with sample parameters
+# generate_signal_with_harmonics(
+#     amplitude=5,          # Amplitude of 5 µV
+#     frequency=10,         # Base frequency of 10 Hz
+#     sampling_rate=1000,   # Sampling rate of 1000 samples per second
+#     duration=2,           # Duration of 2 seconds
+#     harmonic_factors=[0.5, 0.25]  # Scaling factors for harmonics
+# )
