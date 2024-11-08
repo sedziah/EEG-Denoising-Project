@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSVEP Denoising Interface</title>
+</head>
+<body>
+    <h1>SSVEP Denoising Interface</h1>
+
+    <!-- Form for data generation parameters -->
+    <form action="/generate" method="post">
+        <label for="frequency">Frequency (Hz):</label>
+        <input type="number" id="frequency" name="frequency" step="0.1" value="10">
+        <label for="harmonics">Number of Harmonics:</label>
+        <input type="number" id="harmonics" name="harmonics" value="2">
+        <button type="submit">Generate Data</button>
+    </form>
+    
+    <!-- Form to extract clean signal -->
+    <form action="/extract" method="post" style="margin-top: 20px;">
+        <button type="submit">Extract Clean Data</button>
+    </form>
+
+    <!-- Display generated plot if available -->
+    {% if plot_url %}
+        <h2>True vs. Predicted Clean Signal</h2>
+        <img src="data:image/png;base64,{{ plot_url }}" alt="Plot of True vs. Predicted Signal">
+    {% endif %}
+</body>
+</html>

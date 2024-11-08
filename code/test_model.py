@@ -51,3 +51,4 @@ plt.ylabel("Amplitude (µV)")
 plt.title("True vs. Predicted Clean Signal for Sample")
 plt.legend()
 plt.show()
+ 
