@@ -4,20 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Filter Signal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        input[type="file"],
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .button-container button,
+        .button-container a {
+            padding: 0.75rem;
+            font-size: 1rem;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .button-submit {
+            background-color: #4CAF50;
+        }
+        .button-submit:hover {
+            background-color: #45a049;
+        }
+        .button-back {
+            background-color: #007BFF;
+        }
+        .button-back:hover {
+            background-color: #0069d9;
+        }
+    </style>
 </head>
 <body>
-    <h1>Filter Signal</h1>
-    <form action="/filter" method="post" enctype="multipart/form-data">
-        <label for="file">Upload Noisy Signal File (CSV):</label>
-        <input type="file" id="file" name="file" accept=".csv" required><br>
+    <div class="container">
+        <h1>Filter Signal</h1>
+        <form action="/filter" method="post" enctype="multipart/form-data">
+            <label for="file">Upload Noisy Signal File (CSV):</label>
+            <input type="file" id="file" name="file" accept=".csv" required>
 
-        <label for="frequency">Signal Frequency (Hz):</label>
-        <input type="number" id="frequency" name="frequency" step="0.1" value="10" required><br>
+            <label for="frequency">Signal Frequency (Hz):</label>
+            <input type="number" id="frequency" name="frequency" step="0.1" value="10" required>
 
-        <label for="harmonics">Number of Harmonics:</label>
-        <input type="number" id="harmonics" name="harmonics" value="2" required><br>
+            <label for="harmonics">Number of Harmonics:</label>
+            <input type="number" id="harmonics" name="harmonics" value="2" required>
 
-        <button type="submit">Filter and Download CSV</button>
-    </form>
+            <div class="button-container">
+                <button type="submit" class="button-submit">Filter and Download CSV</button>
+                <a href="/" class="button-back">Go Back to Home</a>
+            </div>
+        </form>
+    </div>
 </body>
 </html>

@@ -1,6 +1,5 @@
-import numpy as np
-import pandas as pd
 import tensorflow as tf
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 
@@ -11,7 +10,7 @@ def predict_clean_signals(
     clean_signal_column="Clean Signal"
 ):
     """
-    Evaluates a the trained model on the entire dataset as a single sequence.
+    Evaluates a trained model on the entire dataset as a single sequence.
 
     Parameters:
     - model_path (str): Path to the trained model (.keras file).
@@ -21,6 +20,7 @@ def predict_clean_signals(
 
     Returns:
     - mse (float): Mean Squared Error between predicted and actual clean signal.
+    - predictions (numpy array): Array of predicted clean signal values.
     """
     # Load the model
     model = tf.keras.models.load_model(model_path)
@@ -38,20 +38,23 @@ def predict_clean_signals(
     y = clean_signal.reshape(1, -1)     # Shape to (1, total_timesteps)
 
     # Generate predictions on the entire dataset
-    predictions = model.predict(X)
+    predictions = model.predict(X).flatten()
 
     # Calculate Mean Squared Error for evaluation
-    mse = mean_squared_error(y.flatten(), predictions.flatten())
+    mse = mean_squared_error(y.flatten(), predictions)
     print(f"Test Mean Squared Error: {mse}")
+
+    # Add predictions as a new column in the original DataFrame
+    data['Predicted Clean Signal'] = predictions
 
     # Plot a comparison of true and predicted signals for the entire sequence
     plt.figure(figsize=(12, 6))
     plt.plot(y.flatten(), label="True Clean Signal", linestyle='--')
-    plt.plot(predictions.flatten(), label="Predicted Clean Signal")
+    plt.plot(predictions, label="Predicted Clean Signal")
     plt.xlabel("Time (ms)")
     plt.ylabel("Amplitude (µV)")
     plt.title("True vs. Predicted Clean Signal for the Entire Dataset")
     plt.legend()
     plt.show()
 
-    return mse
+    return mse, data  # Return the updated DataFrame with predictions
