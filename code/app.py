@@ -4,10 +4,11 @@ matplotlib.use('Agg')  # Use non-interactive backend to avoid GUI issues
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 import tensorflow as tf
 import io
 import base64
+import os
 
 app = Flask(__name__)
 
@@ -15,11 +16,21 @@ app = Flask(__name__)
 model_path = "ssvep_denoising_model_with_all_features.keras"
 model = tf.keras.models.load_model(model_path)
 
+# Function to generate a sine wave and save it as a CSV file
+def generate_sine_wave(frequency, amplitude, sampling_rate, duration):
+    t = np.linspace(0, duration, int(sampling_rate * duration), endpoint=False)
+    signal = amplitude * np.sin(2 * np.pi * frequency * t)
+    df = pd.DataFrame({'Time': t, 'Signal': signal})
+    csv_file = "generated_signal.csv"
+    df.to_csv(csv_file, index=False)
+    return csv_file
+
 # Function to process noisy signal and predict clean signal
 def predict_clean_signal(noisy_signal, frequency=10, harmonics=2):
-    sampling_rate = 1000
-    t = np.arange(0, 1, 1 / sampling_rate)
-    
+    # Use the length of the noisy signal for all components to match dimensions
+    signal_length = len(noisy_signal)
+    t = np.linspace(0, 1, signal_length, endpoint=False)
+
     # Generate harmonic components to match the noisy signal's structure
     harmonic_components = []
     for i in range(1, harmonics + 1):
@@ -34,8 +45,8 @@ def predict_clean_signal(noisy_signal, frequency=10, harmonics=2):
         [noisy_signal] + harmonic_components + [np.full_like(t, np.pi / (i + 1)) for i in range(harmonics)]
     )
 
-    # Predict using the model
-    X_test = features.reshape(1, len(t), features.shape[1])
+    # Reshape and predict using the model
+    X_test = features.reshape(1, signal_length, features.shape[1])
     predicted_clean_signal = model.predict(X_test)[0]
     return predicted_clean_signal
 
@@ -44,46 +55,49 @@ def predict_clean_signal(noisy_signal, frequency=10, harmonics=2):
 def index():
     return render_template('index.html')
 
-@app.route('/extract', methods=['POST', 'GET'])
-def extract():
-    # Redirect GET requests to the index page
-    if request.method == 'GET':
-        return redirect(url_for('index'))
-    
-    # Process POST request
-    file = request.files.get('file')
-    if not file or file.filename == '':
-        return redirect(url_for('index'))
+@app.route('/generate', methods=['GET', 'POST'])
+def generate():
+    if request.method == 'POST':
+        # Get parameters from the form
+        frequency = float(request.form.get('frequency', 10))
+        amplitude = float(request.form.get('amplitude', 5))
+        sampling_rate = int(request.form.get('sampling_rate', 1000))
+        duration = float(request.form.get('duration', 1))
 
-    # Read the uploaded file into a DataFrame
-    df = pd.read_csv(file)
-    noisy_signal = df.iloc[:, 0].values  # Assume first column contains the noisy signal
-    
-    # Retrieve additional parameters
-    frequency = float(request.form.get("frequency", 10))
-    harmonics = int(request.form.get("harmonics", 2))
-    
-    # Predict clean signal using the model
-    predicted_clean_signal = predict_clean_signal(noisy_signal, frequency=frequency, harmonics=harmonics)
+        # Generate the signal CSV file
+        csv_file = generate_sine_wave(frequency, amplitude, sampling_rate, duration)
+        
+        # Serve the generated CSV file for download
+        return send_file(csv_file, as_attachment=True)
 
-    # Plot and save the figure as a base64 image
-    plt.figure(figsize=(12, 6))
-    t = np.linspace(0, 1, len(noisy_signal))
-    plt.plot(t, noisy_signal, label="Input Noisy Signal", linestyle='--')
-    plt.plot(t, predicted_clean_signal, label="Predicted Clean Signal")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Amplitude (µV)")
-    plt.title("Noisy Signal vs. Predicted Clean Signal")
-    plt.legend()
+    return render_template('generate.html')
 
-    # Convert plot to PNG image in base64 for embedding
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plot_url = base64.b64encode(img.getvalue()).decode()
-    plt.close()
+@app.route('/filter', methods=['GET', 'POST'])
+def filter_signal():
+    if request.method == 'POST':
+        # Get the uploaded file
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            return redirect(url_for('filter_signal'))
 
-    return render_template('index.html', plot_url=plot_url)
+        # Read the uploaded file
+        df = pd.read_csv(file)
+        noisy_signal = df.iloc[:, 1].values  # Assuming the signal data is in the second column
+        
+        # Filter the signal using the model
+        frequency = float(request.form.get("frequency", 10))
+        harmonics = int(request.form.get("harmonics", 2))
+        clean_signal = predict_clean_signal(noisy_signal, frequency=frequency, harmonics=harmonics)
+
+        # Prepare the output DataFrame with time and clean signal
+        df['Clean Signal'] = clean_signal
+        clean_csv = "filtered_signal.csv"
+        df.to_csv(clean_csv, index=False)
+
+        # Serve the filtered CSV file for download
+        return send_file(clean_csv, as_attachment=True)
+
+    return render_template('filter.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
