@@ -1,7 +1,5 @@
-import numpy as np
-import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
+from python_packages import *
+
 
 # Parameters for sine wave generation
 fundamental_frequency = 10  # 10 Hz base frequency

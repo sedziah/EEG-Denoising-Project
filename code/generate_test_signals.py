@@ -1,5 +1,5 @@
-import numpy as np
-import pandas as pd
+from python_packages import *
+
 
 def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration, harmonic_factors=[0.5, 0.25]):
     """
