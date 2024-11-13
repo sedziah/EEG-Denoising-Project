@@ -54,8 +54,8 @@ def generate_signal_with_harmonics(amplitude, frequency, sampling_rate, duration
 # Test the function with sample parameters
 generate_signal_with_harmonics(
     amplitude=5,          # Amplitude of 5 µV
-    frequency=10,         # Base frequency of 10 Hz
-    sampling_rate=100,   # Sampling rate of 100 samples per second
+    frequency=7.5,         # Base frequency of 10 Hz
+    sampling_rate=1000,   # Sampling rate of 100 samples per second
     duration=2,           # Duration of 2 seconds
     harmonic_factors=[0.5, 0.25]  # Scaling factors for harmonics
 )
