@@ -1,0 +1,2 @@
+# Run test model 
+python test_model.py ../models/trained/models/trained/ssvep_denoising_model_with_all_features.keras ../code/generated_signal_with_harmonics.csv
