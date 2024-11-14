@@ -1,4 +1,4 @@
-from python_packages import *
+from code.model_training.python_packages import *
 
 
 # Define paths to model and dataset

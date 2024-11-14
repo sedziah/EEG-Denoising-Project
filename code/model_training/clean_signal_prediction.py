@@ -1,4 +1,4 @@
-from python_packages import *
+from code.python_packages import *
 
 # Define paths to model and dataset
 model_path = "ssvep_denoising_model_with_all_features.keras"

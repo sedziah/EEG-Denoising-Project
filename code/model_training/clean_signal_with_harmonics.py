@@ -1,4 +1,4 @@
-from python_packages import *
+from code.python_packages import *
 
 
 # Parameters for sine wave generation

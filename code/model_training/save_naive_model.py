@@ -1,4 +1,4 @@
-from python_packages import *
+from code.python_packages import *
 
 # Define the Naive model architecture
 def create_naive_model(timesteps, feature_count):
